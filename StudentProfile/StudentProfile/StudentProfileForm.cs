@@ -9,7 +9,7 @@ namespace StudentProfile
 
         private void button1_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Contact Number: 0293204854");
+            MessageBox.Show("Contact Number: 094204854");
         }
     }
 }
