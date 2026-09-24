@@ -16,7 +16,12 @@ namespace StudentProfile
 
         private void CourseRegistrationForm_Load(object sender, EventArgs e)
         {
-            // Populate ComboBox with student names on load
+            PopulateStudentComboBox();
+        }
+
+        private void PopulateStudentComboBox()
+        {
+            cmbStudents.Items.Clear();
             foreach (Student s in manager.StudentList)
             {
                 cmbStudents.Items.Add(s.FullName);
@@ -29,44 +34,7 @@ namespace StudentProfile
             if (index < 0) return;
 
             Student selectedStudent = (Student)manager.StudentList[index];
-
-            // 1. Build the status and subject breakdown message for MessageBox
-            string message = "=== STUDENT ENROLLMENT PROFILE ===\n\n";
-            message += "ID: " + selectedStudent.StudentId + "\n";
-            message += "Name: " + selectedStudent.FullName + "\n";
-            message += "Major: " + selectedStudent.Major + "\n";
-            message += "STATUS: " + selectedStudent.Status.ToUpper() + "\n";
-            message += "--------------------------------------------------\n";
-            message += "ENROLLED SUBJECTS:\n";
-
-            if (selectedStudent.EnrolledCourses.Count == 0)
-            {
-                message += "No enrolled subjects for this semester.\n";
-            }
-            else
-            {
-                foreach (string subject in selectedStudent.EnrolledCourses)
-                {
-                    message += "• " + subject + "\n";
-                }
-            }
-
-            message += "--------------------------------------------------\n";
-            message += "Would you like to download/save the official COR file?";
-
-            // 2. Display MessageBox with Yes/No option for downloading COR
-            DialogResult result = MessageBox.Show(
-                message,
-                "Enrollment Status & Subject Breakdown",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Information
-            );
-
-            // 3. If user clicks "Yes", trigger COR file download
-            if (result == DialogResult.Yes)
-            {
-                DownloadCOR(selectedStudent);
-            }
+            ShowStudentInfoMessageBox(selectedStudent);
         }
 
         private void DownloadCOR(Student student)
@@ -79,10 +47,7 @@ namespace StudentProfile
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    // Generate COR string content from the Student model
                     string corData = student.GenerateCOR();
-
-                    // Save to selected file path
                     File.WriteAllText(saveFileDialog.FileName, corData);
 
                     MessageBox.Show(
@@ -92,6 +57,94 @@ namespace StudentProfile
                         MessageBoxIcon.Information
                     );
                 }
+            }
+        }
+
+        private void ShowStudentInfoMessageBox(Student student)
+        {
+            string message = "=== STUDENT ENROLLMENT PROFILE ===\n\n";
+            message += "ID: " + student.StudentId + "\n";
+            message += "Name: " + student.FullName + "\n";
+            message += "Major: " + student.Major + "\n";
+            message += "STATUS: " + student.Status.ToUpper() + "\n";
+            message += "--------------------------------------------------\n";
+            message += "ENROLLED SUBJECTS:\n";
+
+            if (student.EnrolledCourses.Count == 0)
+            {
+                message += "No enrolled subjects for this semester.\n";
+            }
+            else
+            {
+                foreach (string subject in student.EnrolledCourses)
+                {
+                    message += "• " + subject + "\n";
+                }
+            }
+
+            message += "--------------------------------------------------\n";
+            message += "Would you like to download/save the official COR file?";
+
+            DialogResult result = MessageBox.Show(
+                message,
+                "Student Found - Information Profile",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                DownloadCOR(student);
+            }
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            string searchTerm = txtSearch.Text.Trim();
+
+            // Validate empty input
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                MessageBox.Show(
+                    "Please enter a Student ID or Name to search.",
+                    "Input Required",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                return;
+            }
+
+            Student foundStudent = null;
+
+            // Search through the ArrayList by ID or Name (case-insensitive)
+            foreach (Student s in manager.StudentList)
+            {
+                if (s.StudentId.Equals(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    s.FullName.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    foundStudent = s;
+                    break; // Stop at first match
+                }
+            }
+
+            // AC3 & AC4: Display result or no-result message
+            if (foundStudent != null)
+            {
+                // Optional: Sync ComboBox selection with the searched student
+                cmbStudents.SelectedItem = foundStudent.FullName;
+
+                // Display Student Info and Subject Breakdown
+                ShowStudentInfoMessageBox(foundStudent);
+            }
+            else
+            {
+                // Display no-result message
+                MessageBox.Show(
+                    "No student found with ID or Name matching: \"" + searchTerm + "\"",
+                    "Search Result",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
             }
         }
     }
